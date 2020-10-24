@@ -105,11 +105,10 @@ def compute_local_orientations_bilinear(image, cell_size):
     return local_ang,  r_local
 
 
-def shelo(image, K, L):
-    local_ang, r_local = compute_local_orientations_bilinear(image, K)
+def shelo(ang_local, r_local, L):
     h = np.zeros(L, np.float32)
-    local_ang[local_ang < 0] = local_ang[local_ang < 0] + np.pi
-    ang_prime = (L * local_ang) / np.pi
+    ang_local[ang_local < 0] = ang_local[ang_local < 0] + np.pi
+    ang_prime = (L * ang_local) / np.pi
     l_pos = np.floor(ang_prime - 0.5)
     r_pos = np.floor(ang_prime + 0.5)
     for i in range(L):       
