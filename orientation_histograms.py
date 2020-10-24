@@ -69,45 +69,52 @@ def compute_local_orientations_bilinear(image, cell_size):
     gy_mask = np.transpose(gx_mask)
     gx = nd_filters.convolve(image.astype(np.float32), gx_mask)
     gy = nd_filters.convolve(image.astype(np.float32), gy_mask)
-    for i in range(image.shape[0]):
-        for j in range(image.shape[1]):
-            p_prime = (i / image.shape[0]) * cell_size
-            q_prime = (j / image.shape[1]) * cell_size
-            l_pos = int(np.floor(p_prime - 0.5))
-            r_pos = int(np.floor(p_prime + 0.5))
-            n_pos = int(np.floor(q_prime - 0.5))
-            s_pos = int(np.floor(q_prime + 0.5))
-            if r_pos == cell_size:
-                r_pos -= 1
-            if s_pos == cell_size:
-                s_pos -= 1
-            dist_p = p_prime - np.floor(p_prime)
-            if dist_p < 0.5:
-                l_weight = 0.5 - dist_p
-                r_weight = 1 - l_weight
-            else:
-                r_weight = dist_p - 0.5
-                l_weight = 1 - r_weight
-            dist_q = q_prime - np.floor(q_prime)
-            if dist_q < 0.5:
-                n_weight = 0.5 - dist_q
-                s_weight = 1 - n_weight
-            else:
-                s_weight = dist_q - 0.5
-                n_weight = 1 - s_weight
-            Gx_local[l_pos, n_pos] += l_weight * n_weight * (np.square(gx[i, j]) - np.square(gy[i, j]))
-            Gx_local[r_pos, n_pos] += r_weight * n_weight * (np.square(gx[i, j]) - np.square(gy[i, j]))
-            Gx_local[l_pos, s_pos] += l_weight * s_weight * (np.square(gx[i, j]) - np.square(gy[i, j]))
-            Gx_local[r_pos, s_pos] += r_weight * s_weight * (np.square(gx[i, j]) - np.square(gy[i, j]))
-            Gy_local[l_pos, n_pos] += l_weight * n_weight * (2.0 * gx[i, j] * gy[i, j])
-            Gy_local[r_pos, n_pos] += r_weight * n_weight * (2.0 * gx[i, j] * gy[i, j])
-            Gy_local[l_pos, s_pos] += l_weight * s_weight * (2.0 * gx[i, j] * gy[i, j])
-            Gy_local[r_pos, s_pos] += r_weight * s_weight * (2.0 * gx[i, j] * gy[i, j])
-            r_local[l_pos, n_pos] += l_weight * n_weight * np.sqrt(np.square(gx[i, j]) + np.square(gy[i, j]))
-            r_local[r_pos, n_pos] += r_weight * n_weight * np.sqrt(np.square(gx[i, j]) + np.square(gy[i, j]))
-            r_local[l_pos, s_pos] += l_weight * s_weight * np.sqrt(np.square(gx[i, j]) + np.square(gy[i, j]))
-            r_local[r_pos, s_pos] += r_weight * s_weight * np.sqrt(np.square(gx[i, j]) + np.square(gy[i, j]))
+    idx_rows, idx_cols = np.indices(image.shape)
+    p_prime = (idx_rows / image.shape[0]) * cell_size
+    q_prime = (idx_cols / image.shape[1]) * cell_size
+    l_pos = np.floor(p_prime - 0.5)
+    r_pos = np.floor(p_prime + 0.5)
+    n_pos = np.floor(q_prime - 0.5)
+    s_pos = np.floor(q_prime + 0.5)
+    dist_p = p_prime - np.floor(p_prime)
+    l_weight = np.where(dist_p < 0.5, 0.5 - dist_p, 0)
+    r_weight = np.where(dist_p < 0.5, 1 - l_weight, 0)
+    r_weight = np.where(dist_p >= 0.5, dist_p - 0.5, r_weight)
+    l_weight = np.where(dist_p >= 0.5, 1 - r_weight, l_weight)
+    dist_q = q_prime - np.floor(q_prime)
+    n_weight = np.where(dist_q < 0.5, 0.5 - dist_q, 0)
+    s_weight = np.where(dist_q < 0.5, 1 - n_weight, 0)
+    s_weight = np.where(dist_q >= 0.5, dist_q - 0.5, s_weight)
+    n_weight = np.where(dist_q >= 0.5, 1 - s_weight, n_weight)
+    for p in np.arange(cell_size) :
+        for q in np.arange(cell_size) :
+            Gx_local[p, q] += np.sum(np.where((l_pos == p) & (n_pos == q), l_weight * n_weight * (np.square(gx) - np.square(gy)), 0))
+            Gx_local[p, q] += np.sum(np.where((r_pos == p) & (n_pos == q), r_weight * n_weight * (np.square(gx) - np.square(gy)), 0))
+            Gx_local[p, q] += np.sum(np.where((l_pos == p) & (s_pos == q), l_weight * s_weight * (np.square(gx) - np.square(gy)), 0))
+            Gx_local[p, q] += np.sum(np.where((r_pos == p) & (s_pos == q), r_weight * s_weight * (np.square(gx) - np.square(gy)), 0))
+            Gy_local[p, q] += np.sum(np.where((l_pos == p) & (n_pos == q), l_weight * n_weight * 2.0 * gx * gy, 0))
+            Gy_local[p, q] += np.sum(np.where((r_pos == p) & (n_pos == q), r_weight * n_weight * 2.0 * gx * gy, 0))
+            Gy_local[p, q] += np.sum(np.where((l_pos == p) & (s_pos == q), l_weight * s_weight * 2.0 * gx * gy, 0))
+            Gy_local[p, q] += np.sum(np.where((r_pos == p) & (s_pos == q), r_weight * s_weight * 2.0 * gx * gy, 0))
+            r_local[p, q] += np.sum(np.where((l_pos == p) & (n_pos == q), l_weight * n_weight * np.sqrt(np.square(gx) + np.square(gy)), 0))
+            r_local[p, q] += np.sum(np.where((r_pos == p) & (n_pos == q), r_weight * n_weight * np.sqrt(np.square(gx) + np.square(gy)), 0))
+            r_local[p, q] += np.sum(np.where((l_pos == p) & (s_pos == q), l_weight * s_weight * np.sqrt(np.square(gx) + np.square(gy)), 0))
+            r_local[p, q] += np.sum(np.where((r_pos == p) & (s_pos == q), r_weight * s_weight * np.sqrt(np.square(gx) + np.square(gy)), 0))
     local_ang = arctan2(Gy_local, Gx_local) * 0.5
     local_ang = local_ang + np.pi*0.5 # 0 <= ang  <= pi    
     return local_ang,  r_local
+
+
+def shelo(image, K, L):
+    local_ang, r_local = compute_local_orientations_bilinear(image, K)
+    h = np.zeros(L, np.float32)
+    local_ang[local_ang < 0] = local_ang[local_ang < 0] + np.pi
+    ang_prime = (L * local_ang) / np.pi
+    l_pos = np.floor(ang_prime - 0.5)
+    r_pos = np.floor(ang_prime + 0.5)
+    for i in range(L):       
+        h[i] += np.sum(np.where(l_pos == i, r_local, 0))
+        h[i] += np.sum(np.where(r_pos == i, r_local, 0))
+    h =  h / np.linalg.norm(h,2)  #vector unitario    
+    return h
     
