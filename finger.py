@@ -43,7 +43,7 @@ def get_top_5_histogram_matches(input_histogram, finger_histograms):
     counter = 0
     while counter < 5:
         distance, filename = heapq.heappop(heap)
-        if distance == 0:
+        if distance <= 0.01:
             continue
         results.append((filename, distance))
         counter += 1
