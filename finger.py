@@ -40,11 +40,13 @@ def get_top_5_histogram_matches(input_histogram, finger_histograms):
         distance = np.sqrt(np.sum(np.square(input_histogram - finger_histogram)))
         heapq.heappush(heap, (distance, filename))
     results = []
-    for i in range(5):
+    counter = 0
+    while counter < 5:
         distance, filename = heapq.heappop(heap)
         if distance == 0:
-            distance, filename = heapq.heappop(heap)
+            continue
         results.append((filename, distance))
+        counter += 1
     return results
 
 
