@@ -12,7 +12,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
     image = pai_io.imread(args.image, as_gray = True)
     K = args.k
+    print('Generating local orientations without bilinear interpolation')
     A1, R1 = oh.compute_local_orientations(image, K)
+    print('Generating local orientations with bilinear interpolation')
     A2, R2 = oh.compute_local_orientations_bilinear(image, K)
     ys = np.arange(K)
     xs = np.arange(K)

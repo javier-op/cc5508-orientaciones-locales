@@ -9,14 +9,18 @@ import pickle
 
 
 def calculate_all_fingerprints_histograms(local_orientation_function, K, L):
+    print('Getting local orientation database using function: {}'.format(local_orientation_function.__name__))
     try:
         with open(local_orientation_function.__name__+'.pkl', 'rb') as input:
             finger_orientations = pickle.load(input)
     except (IOError, pickle.PickleError):
         finger_orientations = {}
     if K in finger_orientations:
+        print('Local orientations cache loaded for K = {}'.format(K))
         finger_orientations_k = finger_orientations[K]
     else:
+        print('Local orientations cache not found')
+        print('Generating local orientations database for K = {}, takes a few minutes'.format(K))
         finger_orientations_k = {}
         pathlist = Path('./fingerprints').rglob('*.png')
         for path in pathlist:
@@ -25,8 +29,10 @@ def calculate_all_fingerprints_histograms(local_orientation_function, K, L):
             finger_orientations_k[str(path)] = (ang_local, r_local)
         finger_orientations[K] = finger_orientations_k
         with open(local_orientation_function.__name__+'.pkl', 'wb') as output:
+            print('Saving local orientations cache')
             pickle.dump(finger_orientations, output, pickle.HIGHEST_PROTOCOL)
     finger_histograms = {}
+    print('Generating histograms for L = {}'.format(L))
     for filename in finger_orientations_k:
         ang_local, r_local = finger_orientations_k[filename]
         finger_histograms[filename] = oh.compute_orientation_histogram_lineal(ang_local, r_local, L)
@@ -85,17 +91,21 @@ if __name__ == '__main__':
     image = pai_io.imread(args.image, as_gray = True)
 
     if args.eval:
+        print('Evaluation mode with K = {}, L = {}'.format(args.k, args.l))
         recover_error_regular = calculate_recover_error(oh.compute_local_orientations)
         recover_error_bilinear = calculate_recover_error(oh.compute_local_orientations_bilinear)
         print('Recover error without bilinear interpolation: ' + str(recover_error_regular))
         print('Recover error with bilinear interpolation: ' + str(recover_error_bilinear))
     else:
         if args.non_bilinear:
+            print('Calculating best 5 matches without bilinear interpolation')
             local_orientation_function = oh.compute_local_orientations
         else:
+            print('Calculating best 5 matches with bilinear interpolation')
             local_orientation_function = oh.compute_local_orientations_bilinear
         finger_histograms = calculate_all_fingerprints_histograms(local_orientation_function, args.k, args.l)
         ang_local, r_local = local_orientation_function(image, args.k)
+        print('Generating histogram for input')
         input_histogram = oh.compute_orientation_histogram_lineal(ang_local, r_local, args.l)
         results = get_top_5_histogram_matches(input_histogram, finger_histograms)
         print(results)
