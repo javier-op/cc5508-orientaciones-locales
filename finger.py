@@ -25,6 +25,7 @@ def calculate_all_fingerprints_histograms(local_orientation_function, K, L):
         pathlist = Path('./fingerprints').rglob('*.png')
         for path in pathlist:
             image = pai_io.imread(str(path), as_gray = True)
+            print('Processing file: {}'.format(str(path)))
             ang_local, r_local = local_orientation_function(image, K)
             finger_orientations_k[str(path)] = (ang_local, r_local)
         finger_orientations[K] = finger_orientations_k
@@ -43,17 +44,13 @@ def get_top_5_histogram_matches(input_histogram, finger_histograms):
     heap = []
     for filename in finger_histograms:
         finger_histogram = finger_histograms[filename]
-        a = input_histogram - finger_histogram
-        b = np.square(a)
-        c = np.sum(b)
-        d = np.sqrt(c)
         distance = np.sqrt(np.sum(np.square(input_histogram - finger_histogram)))
         heapq.heappush(heap, (distance, filename))
     results = []
     counter = 0
     while counter < 5:
         distance, filename = heapq.heappop(heap)
-        if distance <= 0.01:
+        if distance <= 0.001:
             continue
         results.append((filename, distance))
         counter += 1
