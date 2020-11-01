@@ -82,29 +82,31 @@ def calculate_recover_error(local_orientation_function):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Finds most similar fingerprints.')
-    parser.add_argument('--image', type=str, help='Input image..', required=True)
     parser.add_argument('-k', type=int, help='Grid dimensions for local orientations.', required=True)
     parser.add_argument('-l', type=int, help='Array dimensions for histogram.', required=True)
-    mode = parser.add_mutually_exclusive_group()
-    mode.add_argument('--non-bilinear', help='Calculate local orientations without bilinear interpolation.', action='store_true')
+    parser.add_argument('--basic', help='Calculate local orientations without bilinear interpolation.', action='store_true')
+    mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument('--eval', help='Performance evaluation mode.', action='store_true')
+    mode.add_argument('--image', type=str, help='Input image.')
     args = parser.parse_args()
-    image = pai_io.imread(args.image, as_gray = True)
 
     if args.eval:
+        if args.basic:
+            raise argparse.ArgumentTypeError("--basic option is only valid on --image mode.")
         print('Evaluation mode with K = {}, L = {}'.format(args.k, args.l))
-        recover_error_regular = calculate_recover_error(oh.compute_local_orientations)
+        recover_error_regular = calculate_recover_error(oh.compute_local_orientations_basic)
         recover_error_bilinear = calculate_recover_error(oh.compute_local_orientations_bilinear)
         print('Recover error without bilinear interpolation: ' + str(recover_error_regular))
         print('Recover error with bilinear interpolation: ' + str(recover_error_bilinear))
     else:
-        if args.non_bilinear:
+        if args.basic:
             print('Calculating best 5 matches without bilinear interpolation')
-            local_orientation_function = oh.compute_local_orientations
+            local_orientation_function = oh.compute_local_orientations_basic
         else:
             print('Calculating best 5 matches with bilinear interpolation')
             local_orientation_function = oh.compute_local_orientations_bilinear
         finger_histograms = calculate_all_fingerprints_histograms(local_orientation_function, args.k, args.l)
+        image = pai_io.imread(args.image, as_gray = True)
         ang_local, r_local = local_orientation_function(image, args.k)
         print('Generating histogram for input, takes a few seconds')
         input_histogram = oh.compute_orientation_histogram_lineal(ang_local, r_local, args.l)

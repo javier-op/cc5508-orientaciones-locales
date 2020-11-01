@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import orientation_histograms as oh
 import pai_io
+import time
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Plots local orientations.')
@@ -13,9 +14,15 @@ if __name__ == '__main__':
     image = pai_io.imread(args.image, as_gray = True)
     K = args.k
     print('Generating local orientations without bilinear interpolation')
+    start = time.time()
     A1, R1 = oh.compute_local_orientations(image, K)
+    end = time.time()
+    print('Function took {} sec'.format(end - start))
     print('Generating local orientations with bilinear interpolation')
+    start = time.time()
     A2, R2 = oh.compute_local_orientations_bilinear(image, K)
+    end = time.time()
+    print('Function took {} sec'.format(end - start))
     ys = np.arange(K)
     xs = np.arange(K)
     ys = np.floor(( (ys + 0.5) / K ) * image.shape[0])
