@@ -40,7 +40,7 @@ def calculate_all_fingerprints_histograms(local_orientation_function, K, L):
     return finger_histograms
 
 
-def get_top_5_histogram_matches(input_histogram, finger_histograms):
+def get_top_5_histogram_matches(input_histogram, finger_histograms, include_best):
     heap = []
     for filename in finger_histograms:
         finger_histogram = finger_histograms[filename]
@@ -50,7 +50,7 @@ def get_top_5_histogram_matches(input_histogram, finger_histograms):
     counter = 0
     while counter < 5:
         distance, filename = heapq.heappop(heap)
-        if distance <= 0.001:
+        if distance == 0. and not include_best:
             continue
         results.append((filename, distance))
         counter += 1
@@ -71,7 +71,7 @@ def calculate_recover_error(local_orientation_function):
     fingerprint_to_class_map = get_fingerprint_to_class_map()
     recover_errors = []
     for current_filename in finger_histograms:
-        current_results = get_top_5_histogram_matches(finger_histograms[current_filename], finger_histograms)
+        current_results = get_top_5_histogram_matches(finger_histograms[current_filename], finger_histograms, False)
         recover_error = 0
         for result_filename, distance in current_results:
             if fingerprint_to_class_map[current_filename] != fingerprint_to_class_map[result_filename]:
@@ -110,7 +110,7 @@ if __name__ == '__main__':
         ang_local, r_local = local_orientation_function(image, args.k)
         print('Generating histogram for input, takes a few seconds')
         input_histogram = oh.compute_orientation_histogram_lineal(ang_local, r_local, args.l)
-        results = get_top_5_histogram_matches(input_histogram, finger_histograms)
+        results = get_top_5_histogram_matches(input_histogram, finger_histograms, True)
         print('Showing results')
         image1 = pai_io.imread(results[0][0], as_gray = True)
         image2 = pai_io.imread(results[1][0], as_gray = True)
