@@ -15,7 +15,7 @@ if __name__ == '__main__':
     K = args.k
     print('Generating local orientations without bilinear interpolation')
     start = time.time()
-    A1, R1 = oh.compute_local_orientations(image, K)
+    A1, R1 = oh.compute_local_orientations_basic(image, K)
     end = time.time()
     print('Function took {} sec'.format(end - start))
     print('Generating local orientations with bilinear interpolation')

@@ -110,7 +110,7 @@ if __name__ == '__main__':
         ang_local, r_local = local_orientation_function(image, args.k)
         print('Generating histogram for input, takes a few seconds')
         input_histogram = oh.compute_orientation_histogram_lineal(ang_local, r_local, args.l)
-        results = get_top_5_histogram_matches(input_histogram, finger_histograms, True)
+        results = get_top_5_histogram_matches(input_histogram, finger_histograms, False)
         print('Showing results')
         image1 = pai_io.imread(results[0][0], as_gray = True)
         image2 = pai_io.imread(results[1][0], as_gray = True)
